@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 import os
 import argparse
 import time
+import yt_dlp
 
 def send_to_elevenlabs(video_path, api_key):
     # Get the file extension to determine content type
@@ -98,6 +99,44 @@ def wait_and_download(dubbing_id, api_key, target_lang="ru", max_attempts=120, c
     print("Dubbing timed out")
     return None
 
+def download_youtube_video(url, output_dir="downloads"):
+    """Download YouTube video and return the path to the downloaded file"""
+    os.makedirs(output_dir, exist_ok=True)
+    
+    # Configure yt-dlp options
+    ydl_opts = {
+        'outtmpl': os.path.join(output_dir, '%(title)s.%(ext)s'),
+        'format': 'mp4/best[ext=mp4]',  # Prefer mp4 format
+        'restrictfilenames': True,  # Avoid special characters in filename
+    }
+    
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            # Extract info first
+            info = ydl.extract_info(url, download=False)
+            
+            # Get the filename that yt-dlp will actually use
+            filename = ydl.prepare_filename(info)
+            
+            # Download the video
+            ydl.download([url])
+            
+            # Return the actual path
+            if os.path.exists(filename):
+                return filename
+            else:
+                # Fallback: look for the most recently created file in downloads dir
+                files = [os.path.join(output_dir, f) for f in os.listdir(output_dir)]
+                if files:
+                    most_recent = max(files, key=os.path.getctime)
+                    return most_recent
+                else:
+                    return None
+            
+    except Exception as e:
+        print(f"Error downloading YouTube video: {str(e)}")
+        return None
+
 def main():
     parser = argparse.ArgumentParser(description="YouTube Video Translator using ElevenLabs")
     parser.add_argument("--check-dubbing", type=str, help="Check status of dubbing with given ID")
@@ -105,6 +144,7 @@ def main():
     parser.add_argument("--wait-and-download", type=str, help="Wait for dubbing to complete and download automatically")
     parser.add_argument("--input-file", type=str, help="Path to input video file")
     parser.add_argument("--target-lang", type=str, default="ru", help="Target language code (default: ru)")
+    parser.add_argument("--youtube-url", type=str, help="YouTube video URL")
     
     args = parser.parse_args()
     
@@ -137,6 +177,44 @@ def main():
     # Wait for dubbing to complete and download
     if args.wait_and_download:
         wait_and_download(args.wait_and_download, api_key, args.target_lang)
+        return
+
+    # YouTube video download functionality
+    if args.youtube_url:
+        print(f"Downloading YouTube video: {args.youtube_url}")
+        video_path = download_youtube_video(args.youtube_url)
+        if video_path:
+            print(f"Downloaded: {video_path}")
+            # Process the downloaded video
+            print("Sending video to ElevenLabs for dubbing...")
+            response = send_to_elevenlabs(video_path, api_key)
+            print(f"Status: {response.status_code}")
+            print("Response:", response.text)
+            
+            if response.status_code == 200:
+                response_data = response.json()
+                dubbing_id = response_data.get("dubbing_id")
+                expected_duration = response_data.get("expected_duration_sec")
+                
+                print(f"\n🎬 Dubbing started successfully!")
+                print(f"📋 Dubbing ID: {dubbing_id}")
+                print(f"⏱️  Expected duration: {expected_duration:.1f} seconds")
+                print(f"🎥 Original video: {video_path}")
+                print(f"\n⏳ Automatically waiting for completion and downloading...")
+                
+                # Automatically wait and download
+                downloaded_file = wait_and_download(dubbing_id, api_key, args.target_lang)
+                if downloaded_file:
+                    print(f"\n✅ Process complete! Russian dubbed video saved to: {downloaded_file}")
+                else:
+                    print(f"\n❌ Auto-download failed. You can manually check status and download with:")
+                    print(f"   python {os.path.basename(__file__)} --check-dubbing={dubbing_id}")
+                    print(f"   python {os.path.basename(__file__)} --download-dubbing={dubbing_id}")
+            else:
+                print(f"❌ Failed to start dubbing. Status: {response.status_code}")
+                print("Response:", response.text)
+        else:
+            print("Failed to download YouTube video")
         return
 
     # Original video upload functionality
