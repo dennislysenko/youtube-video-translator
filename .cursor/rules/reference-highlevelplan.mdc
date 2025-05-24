@@ -1,0 +1,8 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+Reference `plans/0.HighLevelPlan.md`, and more broadly, the `plans` directory. The leading numbers roughly indicate chronological order and order of importance (lower = earlier and more foundational or high level). 
+
+You can mostly safely ignore anything in `plans/done`. 
