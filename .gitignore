@@ -1,2 +1,5 @@
 .env
 downloads
+.firebaserc
+node_modules
+public
