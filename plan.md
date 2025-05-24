@@ -1,0 +1,51 @@
+# YouTube Video Translation Service - High-Level Plan
+
+## Overview - UX Flow
+
+• User pastes YouTube link into input interface and submits for processing
+• System queues the video for translation and provides a tracking ID or progress page
+• Background processing extracts audio, translates English to Russian, and generates dubbed video
+• User receives notification (email/SMS) when translation is complete with playback link
+• User shares playback link with grandma who can watch Russian-dubbed version
+
+## Core Components
+
+• **Video processing backend** - Service that takes an English YouTube video/short link as input and outputs a video with Russian voiceover
+
+• **Input user interface** - Mobile and/or web app that accepts links to English YouTube videos/shorts and allows the user to generate playback link & track conversion progress
+
+• **Playback user interface** - Web page that allows video playback
+
+## Video Translation Flow
+
+**MVP - Continuous Narration:**
+Whisper transcription → translate full text → generate single Russian audio track → stretch original video to match Russian audio length using ffmpeg. Simple, clean audio quality prioritized over perfect sync.
+
+**V2 - Intelligent Segmentation:**
+• Transcribe the video with timestamps in transcript
+• Break into logical segments of the video using LLM analysis
+• Translate these logical segments individually
+• Splice the translated segments together
+• Recursive subdivision for complex segments to achieve professional-quality results
+
+## Input Web App Spec
+
+**Simple Interface:**
+Single page with YouTube link input field and submit button. After submission, shows processing status and generates shareable playback link when complete.
+
+**Tech Stack:**
+Firebase for backend (Cloud Functions for video processing, Firestore for job tracking, Storage for video files). React frontend hosted on Firebase Hosting. Cloud Functions handle the entire translation pipeline and file management.
+
+**User Flow:**
+Paste YouTube link → submit → get job ID and status page → processing runs in background → status page updates to show completion with playback link → copy and share link with grandma.
+
+## Playback Web Interface
+
+**Grandma-Friendly Design:**
+Simple video player page with large play button, volume controls, and fullscreen option. No complicated UI elements or navigation. Mobile-first for Android viewing. Background playback is ideal if possible.
+
+**Same Codebase Integration:**
+Lives in same Firebase Hosting project as input app. Route like `/watch/[videoId]` loads translated video from Firebase Storage. Standard HTML5 video player with basic controls grandma can understand. 
+
+**Link Sharing:**
+Direct shareable URLs that work in any browser or messaging app. No login required, just click and watch the Russian-dubbed video.
