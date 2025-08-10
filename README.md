@@ -25,6 +25,10 @@ No apps to download, no accounts to create. Just paste, process, and share.
 
 This project is in development. The current version supports processing of both local video files and YouTube videos via CLI using ElevenLabs AI dubbing service.
 
+### Future Updates
+- Basic Conversion Web UI (enter-your-own ElevenLabs API key)
+- Playback Mobile Apps (with offline downloading & playback to mimic Youtube)
+
 ### Usage
 
 ```bash
