@@ -6,7 +6,7 @@ import argparse
 import time
 import yt_dlp
 
-def send_to_elevenlabs(video_path, api_key):
+def send_to_elevenlabs(video_path, api_key, target_lang="ru"):
     # Get the file extension to determine content type
     file_ext = os.path.splitext(video_path)[1].lower()
     
@@ -27,7 +27,7 @@ def send_to_elevenlabs(video_path, api_key):
             "https://api.elevenlabs.io/v1/dubbing",
             headers={"xi-api-key": api_key},
             files={"file": (filename, f, content_type)},
-            data={"source_lang": "en", "target_lang": "ru", "watermark": "true"}
+            data={"source_lang": "en", "target_lang": target_lang, "watermark": "false"}
         )
     return response
 
@@ -143,7 +143,7 @@ def main():
     parser.add_argument("--download-dubbing", type=str, help="Download completed dubbing with given ID")
     parser.add_argument("--wait-and-download", type=str, help="Wait for dubbing to complete and download automatically")
     parser.add_argument("--input-file", type=str, help="Path to local video file (supports .mp4, .mov, .avi, .mkv, .webm)")
-    parser.add_argument("--target-lang", type=str, default="ru", help="Target language code (default: ru)")
+    parser.add_argument("--target-lang", type=str, default="ru", help="Target language code (default: ru). Popular options: es (Spanish), fr (French), de (German), it (Italian), pt (Portuguese), zh (Chinese), ja (Japanese), ko (Korean), ar (Arabic), hi (Hindi), and 60+ more")
     parser.add_argument("--youtube-url", type=str, help="YouTube video URL to download and translate")
     
     args = parser.parse_args()
@@ -186,8 +186,8 @@ def main():
         if video_path:
             print(f"Downloaded: {video_path}")
             # Process the downloaded video
-            print("Sending video to ElevenLabs for dubbing...")
-            response = send_to_elevenlabs(video_path, api_key)
+            print(f"Sending video to ElevenLabs for dubbing (English → {args.target_lang})...")
+            response = send_to_elevenlabs(video_path, api_key, args.target_lang)
             print(f"Status: {response.status_code}")
             print("Response:", response.text)
             
@@ -205,7 +205,7 @@ def main():
                 # Automatically wait and download
                 downloaded_file = wait_and_download(dubbing_id, api_key, args.target_lang)
                 if downloaded_file:
-                    print(f"\n✅ Process complete! Russian dubbed video saved to: {downloaded_file}")
+                    print(f"\n✅ Process complete! Dubbed video ({args.target_lang}) saved to: {downloaded_file}")
                 else:
                     print(f"\n❌ Auto-download failed. You can manually check status and download with:")
                     print(f"   python {os.path.basename(__file__)} --check-dubbing={dubbing_id}")
@@ -248,8 +248,8 @@ def main():
     file_size_mb = os.path.getsize(input_file) / (1024 * 1024)
     print(f"📁 Using input file: {os.path.basename(input_file)} ({file_size_mb:.1f} MB)")
 
-    print("Sending video to ElevenLabs for dubbing...")
-    response = send_to_elevenlabs(input_file, api_key)
+    print(f"Sending video to ElevenLabs for dubbing (English → {args.target_lang})...")
+    response = send_to_elevenlabs(input_file, api_key, args.target_lang)
 
     print(f"Status: {response.status_code}")
     print("Response:", response.text)
