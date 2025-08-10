@@ -3,3 +3,5 @@ downloads
 .firebaserc
 node_modules
 public
+*.mp4
+.DS_Store

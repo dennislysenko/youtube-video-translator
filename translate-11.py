@@ -138,13 +138,13 @@ def download_youtube_video(url, output_dir="downloads"):
         return None
 
 def main():
-    parser = argparse.ArgumentParser(description="YouTube Video Translator using ElevenLabs")
+    parser = argparse.ArgumentParser(description="Video Translator using ElevenLabs - Supports local files and YouTube URLs")
     parser.add_argument("--check-dubbing", type=str, help="Check status of dubbing with given ID")
     parser.add_argument("--download-dubbing", type=str, help="Download completed dubbing with given ID")
     parser.add_argument("--wait-and-download", type=str, help="Wait for dubbing to complete and download automatically")
-    parser.add_argument("--input-file", type=str, help="Path to input video file")
+    parser.add_argument("--input-file", type=str, help="Path to local video file (supports .mp4, .mov, .avi, .mkv, .webm)")
     parser.add_argument("--target-lang", type=str, default="ru", help="Target language code (default: ru)")
-    parser.add_argument("--youtube-url", type=str, help="YouTube video URL")
+    parser.add_argument("--youtube-url", type=str, help="YouTube video URL to download and translate")
     
     args = parser.parse_args()
     
@@ -218,9 +218,35 @@ def main():
         return
 
     # Original video upload functionality
-    input_file = args.input_file or "/Users/dennis/Downloads/german.mov"
+    # Default to the trimmed video file if no input specified
+    default_file = "/Users/dennis/dev/youtube-translator/pain_workout_first10min.mp4"
+    input_file = args.input_file or default_file
+    
     if not os.path.exists(input_file):
-        raise FileNotFoundError(f"{input_file} not found")
+        print(f"❌ Input file not found: {input_file}")
+        print("\n💡 Available options:")
+        print("   • Specify a file: --input-file /path/to/your/video.mp4")
+        print("   • Use YouTube URL: --youtube-url https://youtube.com/...")
+        
+        # Show some helpful file suggestions if they exist
+        suggestions = [
+            "/Users/dennis/dev/youtube-translator/pain_workout_first10min.mp4",
+            "/Users/dennis/dev/youtube-translator/pain_workout_compatible.mp4",
+            "/Users/dennis/Downloads/german.mov"
+        ]
+        
+        existing_files = [f for f in suggestions if os.path.exists(f)]
+        if existing_files:
+            print("\n📁 Found these video files you might want to use:")
+            for file in existing_files:
+                size_mb = os.path.getsize(file) / (1024 * 1024)
+                print(f"   • {file} ({size_mb:.1f} MB)")
+                
+        raise FileNotFoundError(f"Please specify a valid input file")
+        
+    # Show file info
+    file_size_mb = os.path.getsize(input_file) / (1024 * 1024)
+    print(f"📁 Using input file: {os.path.basename(input_file)} ({file_size_mb:.1f} MB)")
 
     print("Sending video to ElevenLabs for dubbing...")
     response = send_to_elevenlabs(input_file, api_key)
